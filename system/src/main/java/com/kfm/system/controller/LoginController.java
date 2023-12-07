@@ -60,21 +60,23 @@ public class LoginController {
                 return Resp.error("验证码错误");
             }
         }
-        if (!StringUtils.hasText(verification)){
+        if (!StringUtils.hasText(verification) && StringUtils.hasText(user.getEmail())){
             return Resp.error("验证码错误");
         }
         // 验证验证码是否过期
 
-        if (redisTemplate.hasKey(Constant.LOGIN_CODE + user.getEmail()) && redisTemplate.opsForValue().get(Constant.LOGIN_CODE + user.getEmail()) == null){
-            return Resp.error("验证码已过期");
-        }
-        String code = (String) redisTemplate.opsForValue().get(Constant.LOGIN_CODE + user.getEmail());
-        if (ObjectUtils.isEmpty(code)){
-            return Resp.error("验证码错误");
-        }
+        if (StringUtils.hasText(verification) && StringUtils.hasText(user.getEmail())){
+            if (redisTemplate.hasKey(Constant.LOGIN_CODE + user.getEmail()) && redisTemplate.opsForValue().get(Constant.LOGIN_CODE + user.getEmail()) == null){
+                return Resp.error("验证码已过期");
+            }
+            String code = (String) redisTemplate.opsForValue().get(Constant.LOGIN_CODE + user.getEmail());
+            if (ObjectUtils.isEmpty(code)){
+                return Resp.error("验证码错误");
+            }
 
-        if (!code.equals(verification)){
-            return Resp.error("验证码错误");
+            if (!code.equals(verification)){
+                return Resp.error("验证码错误");
+            }
         }
         // 清除验证码
         CaptchaUtil.clear(request);

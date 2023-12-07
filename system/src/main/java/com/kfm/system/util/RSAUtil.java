@@ -3,6 +3,7 @@ package com.kfm.system.util;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.pkcs.RSAPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
@@ -149,13 +150,18 @@ public class RSAUtil {
      */
     public static Map<Integer, String> genKeyPair() {
 
-        Map<Integer, String> keyMap = new HashMap<Integer, String>(); // 用于封装随机产生的公钥与私钥
+        Map<Integer, String> keyMap = new HashMap<>(); // 用于封装随机产生的公钥与私钥
 
         try {
+            // 添加BouncyCastle作为安全提供者
+            Security.addProvider(new BouncyCastleProvider());
+
             // 生成一个密钥对，保存在keyPair中
-            KeyPair keyPair = generateKeyPair(KEY_SIZE);
-            RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate(); // 得到私钥
-            RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic(); // 得到公钥
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
+            keyPairGenerator.initialize(KEY_SIZE);
+            KeyPair keyPair = keyPairGenerator.generateKeyPair();
+            PrivateKey privateKey = keyPair.getPrivate(); // 得到私钥
+            PublicKey publicKey = keyPair.getPublic(); // 得到公钥
 
             // 得到公钥字符串
             String publicKeyString = new String(Base64.encodeBase64(publicKey.getEncoded()));
@@ -172,6 +178,7 @@ public class RSAUtil {
 
         return keyMap;
     }
+
 
     /**
      * 分块加密
