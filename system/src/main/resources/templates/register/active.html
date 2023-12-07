@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link type="text/css" rel="stylesheet" th:href="@{layui/css/layui.css}">
+</head>
+<body>
+<div class="layui-container">
+    <div class="layui-row">
+        <div class="layui-col-lg6 layui-col-md6 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    激活邮件
+                </div>
+                <div class="layui-card-body">
+                    <p>请点击下方链接激活账号</p>
+                    <span th:value="${email}" name="data"></span>
+                    <a href="javascript:void(0)" onclick="activate()" ><button type="button" class="layui-btn layui-bg-blue">蓝色按钮</button></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript" th:inline="javascript">
+    // thymeleaf 获取当前项目路径
+    /*<![CDATA[*/
+    const ctx = /*[[@{/}]]*/;
+    /*]]>*/
+</script>
+<script th:src="@{layui/layui.js}"></script>
+<script>
+     function activate() {
+        // 发送激活邮件
+        layui.$.ajax({
+            url: ctx + "activate",
+            type: "get",
+            data: {
+                email: document.querySelector('span[name="data"]').getAttribute('value'),
+
+            },
+            dataType: "json",
+            success: function (data) {
+                if (data.code === 200) {
+                    layer.msg("激活成功");
+                    setTimeout(function () {
+                        window.location.href = ctx + data.data;
+                    }, 1000);
+                }else {
+                    layer.msg(data.message);
+                }
+            }
+        })
+    }
+</script>
+</html>

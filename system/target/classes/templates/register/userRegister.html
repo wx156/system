@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <link type="text/css" rel="stylesheet" th:href="@{layui/css/layui.css}">
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .layui-form-item {
+            margin-bottom: 20px;
+        }
+
+        .layui-input-prefix {
+            width: 40px;
+            text-align: center;
+        }
+
+        .layui-input {
+            padding-left: 40px;
+        }
+    </style>
+</head>
+<body>
+<form class="layui-form" lay-filter="demo">
+    <div class="demo-reg-container">
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-username"></i>
+                </div>
+                <input type="text" name="username" value="" lay-verify="required|username" placeholder="用户名"
+                       lay-reqtext="请填写用户名" autofocus class="layui-input" lay-affix="clear" title="只能是数字，字母组合，首字母不能是数字，5 - 20 位">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="password" name="password" value="" lay-verify="required|password" placeholder="密码" autocomplete="off" class="layui-input" id="reg-password" lay-affix="eye">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="password" name="confirmPassword" value="" lay-verify="required|confirmPassword" placeholder="确认密码" autocomplete="off" class="layui-input" lay-affix="eye">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-row">
+                <div class="layui-col-xs7">
+                    <div class="layui-input-wrap">
+                        <div class="layui-input-prefix">
+                            <i class="layui-icon layui-icon-vercode"></i>
+                        </div>
+                        <input type="text" name="captcha" value="" lay-verify="vercode" placeholder="验证码"
+                               autocomplete="off" class="layui-input" lay-affix="clear" minlength="4" maxlength="4">
+                    </div>
+                </div>
+                <div class="layui-col-xs5">
+                    <div style="margin-left: 10px;">
+                        <img th:src="@{/captcha}" onclick="this.src='/captcha?t='+ new Date().getTime();"
+                             id="captchaImg">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="demo-reg">注册</button>
+        </div>
+    </div>
+</form>
+</body>
+<script th:src="@{layui/layui.js}"></script>
+<script type="text/javascript" th:inline="javascript">
+    // thymeleaf 获取当前项目路径
+    /*<![CDATA[*/
+    const ctx = /*[[@{/}]]*/;
+    /*]]>*/
+    // 当前窗口 不是最外层窗口
+</script>
+<script>
+    layui.use(function() {
+        var $ = layui.$;
+        var form = layui.form;
+        var layer = layui.layer;
+        var util = layui.util;
+        let flag = true;
+        // 自定义验证规则
+        form.verify({
+            username: function (value, item) {
+                if (value.length < 6) {
+                    flag = false;
+                    return '用户名长度不能小于6位';
+                } else if (!(/^[a-zA-Z][a-zA-Z0-9]{4,19}$/.test(value))) {
+                    flag = false;
+                    return '用户名格式不正确';
+                }else {
+                    flag = true;
+                }
+            },
+            // 确认密码
+            confirmPassword: function (value, item) {
+                var passwordValue = $('#reg-password').val();
+                if (value !== passwordValue) {
+                    flag = false;
+                    return '两次密码输入不一致';
+                }else {
+                    flag = true;
+                }
+            }
+            // 密码
+            , password: function (value, item) {
+                [
+                    /^[\S]{6,12}$/
+                    , '密码必须6到12位，且不能出现空格'
+                ]
+                if (!new RegExp(value).test(value)) {
+                    flag = false;
+                    return '密码必须6到12位，且不能出现空格';
+                }else {
+                    flag = true;
+                }
+            }
+            // 验证码
+            , vercode: function (value, item) {
+                if (!value) {
+                    flag = false;
+                    return '请输入验证码';
+                }else if (value.length!== 4) {
+                    flag = false;
+                    return '请输入4位验证码';
+                }else {
+                    flag = true;
+                }
+            }
+        });
+        form.on('submit(demo-reg)', function(data){
+            var field = data.field;
+            if(flag){
+                $.ajax({
+                    url: ctx + 'userRegister',
+                    type: 'POST',
+                    data: field,
+                    success: function (data) {
+                        if (data.code === 200) {
+                            layer.msg('注册成功', {
+                                icon: 1,
+                                time: 1000
+                            }, function () {
+                                window.top.location.href = ctx + data.data;
+                            }, 1000);
+                        } else {
+                            layer.msg(data.message, {
+                                time: 1000
+                            },1000)
+                            // 刷新验证码
+                            layui.$('#captchaImg').click();
+                        }
+                    }
+                });
+            }
+            return false;
+        });
+    });
+</script>
+</html>

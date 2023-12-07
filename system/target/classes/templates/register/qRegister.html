@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link type="text/css" rel="stylesheet" th:href="@{layui/css/layui.css}">
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .layui-form-item {
+            margin-bottom: 20px;
+        }
+
+        .layui-input-prefix {
+            width: 40px;
+            text-align: center;
+        }
+
+        .layui-input {
+            padding-left: 40px;
+        }
+
+        .layui-btn-getcode {
+            display: inline-block;
+            padding: 0 10px;
+            height: 38px;
+            line-height: 38px;
+            background-color: #fff;
+            border: 1px solid #e6e6e6;
+            color: #666;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        /* 取消hover事件效果 */
+        .layui-btn-getcode:hover {
+            background-color: #fff;
+            border-color: #e6e6e6;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<form class="layui-form" lay-filter="demo">
+    <div class="demo-reg-container">
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-username"></i>
+                </div>
+                <input type="email" name="email" value="" lay-verify="required|email" placeholder="QQ邮箱"
+                       lay-reqtext="请填写邮箱号" autocomplete="off" class="layui-input" lay-affix="clear" title="qq邮箱" required>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="password" name="password" value="" lay-verify="required|password" placeholder="密码" autocomplete="off" class="layui-input" id="reg-password" lay-affix="eye">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="password" name="confirmPassword" value="" lay-verify="required|confirmPassword" placeholder="确认密码" autocomplete="off" class="layui-input" lay-affix="eye">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="demo-reg-a">注册</button>
+        </div>
+    </div>
+</form>
+</body>
+<script type="text/javascript" th:inline="javascript">
+    // thymeleaf 获取当前项目路径
+    /*<![CDATA[*/
+    const ctx = /*[[@{/}]]*/;
+    /*]]>*/
+</script>
+<script th:src="@{layui/layui.js}"></script>
+<script>
+    layui.use(function() {
+        var $ = layui.$;
+        var form = layui.form;
+        var layer = layui.layer;
+        var util = layui.util;
+        let flag = true;
+        // 自定义验证规则
+        form.verify({
+            // 确认密码
+            confirmPassword: function (value, item) {
+                var passwordValue = $('#reg-password').val();
+                if (value !== passwordValue) {
+                    flag = false;
+                    return '两次密码输入不一致';
+                }else {
+                    flag = true;
+                }
+            },
+            // 密码
+            password: function (value, item) {
+                [
+                    /^[\S]{6,20}$/
+                   , '密码必须6到20位，且不能出现空格'
+                ]
+                if (!new RegExp(value).test(value)) {
+                    flag = false;
+                    return '密码必须6到20位，且不能出现空格';
+                }else {
+                    flag = true;
+                }
+            },
+            // 邮箱
+            email: function (value, item) {
+                [
+                    /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/
+                   , '邮箱格式不正确'
+                ]
+                if (!new RegExp(value).test(value)) {
+                    flag = false;
+                    return '邮箱格式不正确';
+                }else {
+                    flag = true;
+                }
+            }
+        });
+        form.on('submit(demo-reg-a)', function(data) {
+            var field = data.field; // 获取表单全部字段值
+            var elem = data.elem; // 获取当前触发事件的元素 DOM 对象，一般为 button 标签
+            var elemForm = data.form; // 获取当前表单域的 form 元素对象，若容器为 form 标签才会返回。
+            if(flag){
+                activate();
+                // 注册
+                layui.$.ajax({
+                    url: ctx + "qRegister",
+                    type: "POST",
+                    data: field,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code === 200) {
+                            layer.msg("注册成功");
+                            setTimeout(function () {
+                                window.location.href = ctx + "login";
+                            }, 1000);
+                        } else {
+                            layer.msg(data.message);
+                        }
+                    }
+                });
+            }
+            return false;
+        });
+    });
+    function activate() {
+        // 发送激活邮件
+        layui.$.ajax({
+            url: ctx + "qActivate",
+            type: "get",
+            data: {
+                email: document.querySelector('[name=email]').value
+            },
+            dataType: "json",
+            success: function (data) {
+                if (data.code === 200) {
+                    layer.msg("激活邮件已发送，请前往邮箱激活");
+                } else {
+                    layer.msg(data.message);
+                }
+            }
+        });
+    }
+
+</script>
+</html>

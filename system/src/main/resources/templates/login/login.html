@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo</title>
+    <link type="text/css" rel="stylesheet" th:href="@{layui/css/layui.css}">
+</head>
+<body>
+<style>
+    .demo-login-container {
+        width: 320px;
+        margin: 124px auto 0;
+    }
+
+    .demo-login-other .layui-icon {
+        position: relative;
+        display: inline-block;
+        margin: 0 2px;
+        top: 2px;
+        font-size: 26px;
+    }
+
+    #captchaImg {
+        cursor: pointer;
+    }
+</style>
+<form class="layui-form">
+    <div class="demo-login-container">
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-username"></i>
+                </div>
+                <input type="text" name="username" value="" lay-verify="required|username" placeholder="用户名"
+                       lay-reqtext="请填写用户名" autocomplete="off" class="layui-input" lay-affix="clear" autofocus title="只能是数字，字母组合，首字母不能是数字，5 - 20 位">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="password" name="password" value="" lay-verify="required|password" placeholder="密   码"
+                       lay-reqtext="请填写密码" autocomplete="off" class="layui-input" lay-affix="eye" title="6 - 20 位">
+            </div>
+        </div>
+        <div class="layui-form-item" hidden="hidden">
+            <div class="layui-row">
+                <div class="layui-col-xs7">
+                    <div class="layui-input-wrap">
+                        <div class="layui-input-prefix">
+                            <i class="layui-icon layui-icon-vercode"></i>
+                        </div>
+                        <input type="text" name="captcha" value="" lay-verify="captcha" placeholder="验证码"
+                               autocomplete="off" class="layui-input" lay-affix="clear" minlength="4" maxlength="4">
+                    </div>
+                </div>
+                <div class="layui-col-xs5">
+                    <div style="margin-left: 10px;">
+                        <img th:src="@{/captcha}" onclick="this.src='/captcha?t='+ new Date().getTime();"
+                             id="captchaImg">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <input type="checkbox" name="remember" lay-skin="primary" title="记住我">
+            <a th:href="@{/forget}" style="float: right; margin-top: 7px;">忘记密码？</a>
+        </div>
+        <div class="layui-form-item">
+            <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="demo-login">登录</button>
+        </div>
+        <div class="layui-form-item demo-login-other">
+            <label>其他登录方式</label>
+            <span style="padding: 0 21px 0 6px;">
+        <a href="javascript: qLogin();" title="QQ邮箱登录"><i class="layui-icon layui-icon-login-qq" style="color: #3492ed;"></i></a>
+        <a href="javascript:phoneLogin();" title="手机号登录"><i class="layui-icon layui-icon-cellphone" style="color: #cf1900;"></i></a>
+      </span>
+            或 <a th:href="@{/register}">注册帐号</a>
+        </div>
+    </div>
+</form>
+<script th:src="@{/layui/layui.js}"></script>
+<script th:src="@{/js/jsencrypt.min.js}"></script>
+<script type="text/javascript" th:inline="javascript">
+    // thymeleaf 获取当前项目路径
+    /*<![CDATA[*/
+    const ctx = /*[[@{/}]]*/;
+    /*]]>*/
+    // 当前窗口 不是最外层窗口
+    if (window != window.top) {
+        // 父窗口 window.parent，最外层窗口 window.top
+        window.top.location.href = ctx;
+    }
+</script>
+<script>
+    // 1:onload时获取公钥,保存到publicKey中
+
+    window.onload = function() {
+        getKey();
+    }
+    layui.use(['form'], function () {
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.$;
+        // // 获取表单数据
+        let flag = true;
+        // // 用户名校验，只能是数字，字母组合，首字母不能是数字，5 - 20 位
+        // let usernameReg = /^[a-zA-Z][a-zA-Z0-9]{4,19}$/;
+        // // 密码校验，只能是数字，字母组合，首字母不能是数字，6 - 20 位
+        // let passwordReg = /^[a-zA-Z][a-zA-Z0-9]{5,19}$/;
+        // // 验证码校验，只能是数字，4 位
+        // let captchaReg = /^[0-9]{4}$/;
+        // // 自定义验证规则
+        form.verify({
+            username: function (value, item) {
+                if (value.length < 6) {
+                    flag = false;
+                    return '用户名长度不能小于6位';
+                } else if (!(/^[a-zA-Z][a-zA-Z0-9]{4,19}$/.test(value))) {
+                    flag = false;
+                    return '用户名格式不正确';
+                }else {
+                    flag = true;
+                }
+            },
+            password: function (value, item) {
+                if (value.length < 6) {
+                    flag = false;
+                    return '密码长度不能小于6位';
+                } else if (value.length > 20) {
+                    flag = false;
+                    return '密码长度不能大于20位';
+                }else {
+                    flag = true;
+                }
+            },
+            captcha: function (value, item) {
+                // 验证码格式为 4 位，由数字和字母组成
+                if(layui.$('#captchaImg').attr('src').indexOf('?') > 0){
+                    if (!(/^[a-zA-Z0-9]{4}$/.test(value))) {
+                        flag = false;
+                        // 验证码刷新
+                        layui.$('#captchaImg').click();
+                        return '验证码格式不正确';
+                    }else {
+                        flag = true;
+                    }
+                }
+            }
+        });
+        // 提交事件
+        // 此处可执行 Ajax 等操作
+        // 提交事件
+        // 提交事件
+        form.on('submit(demo-login)', function(data){
+            var field = data.field; // 获取表单全部字段值
+            var elem = data.elem; // 获取当前触发事件的元素 DOM 对象，一般为 button 标签
+            var elemForm = data.form; // 获取当前表单域的 form 元素对象，若容器为 form 标签才会返回。
+            if(flag){
+                // 登录
+                var loadIndex = layer.msg('登录中...', {
+                    icon: 16,
+                    shade: 0.6,
+                    time:0
+                });
+                // 密码加密
+                if(field.password!= null && field.password!= ''){
+                    var encrypt = new JSEncrypt();
+                    encrypt.setPublicKey(publicKey);
+                    field.password = encrypt.encrypt(field.password);
+                }
+                layui.$.ajax({
+                    url: ctx + 'login',
+                    type: 'post',
+                    data: field,
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code == 200) {
+                            layer.msg(data.message, {time: 1000}, function () {
+                                window.location.href = ctx + data.data;
+                                // 验证码刷新
+                                layui.$('#captchaImg').click();
+                            });
+                        } else {
+                            // 将from表单的第三个元素的属性hidden设置为false
+                            layui.$('.layui-form-item').show();
+                            layer.msg(data.message, {time: 1000});
+                            layui.$('#captchaImg').click();
+                        }
+                    }
+                });
+            }
+            return false; // 阻止默认 form 跳转
+        });
+    });
+    function getKey(){
+        layui.$.ajax({
+            url:"/publicKey",
+            type:"get",
+            success:function (data){
+                publicKey = data.data
+            },
+            dataType:"json"
+        })
+    }
+    function qLogin() {
+        layer.open({
+            type: 2,
+            title: 'QQ邮箱登录',
+            shade: 0.8,
+            area: ['400px', '400px'],
+            content: ctx + 'q-login'
+        });
+    }
+    function phoneLogin() {
+        layer.open({
+            type: 2,
+            title: '手机号登录',
+            shade: 0.8,
+            area: ['400px', '400px'],
+            content: ctx + 'phone-login'
+        });
+    }
+</script>
+</body>
+</html>

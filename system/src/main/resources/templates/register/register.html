@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo</title>
+    <script th:src="@{layui/layui.js}"></script>
+    <link type="text/css" rel="stylesheet" th:href="@{layui/css/layui.css}">
+</head>
+<body>
+<style>
+    .demo-reg-container {
+        width: 320px;
+        margin: 138px auto 0;
+    }
+
+    .demo-reg-other .layui-icon {
+        position: relative;
+        display: inline-block;
+        margin: 0 2px;
+        top: 2px;
+        font-size: 26px;
+    }
+</style>
+<form class="layui-form">
+    <div class="demo-reg-container">
+        <div class="layui-form-item">
+            <div class="layui-row">
+                <div class="layui-col-xs7">
+                    <div class="layui-input-wrap">
+                        <div class="layui-input-prefix">
+                            <i class="layui-icon layui-icon-cellphone"></i>
+                        </div>
+                        <input type="text" name="cellphone" value="" lay-verify="required|phone" placeholder="手机号"
+                               lay-reqtext="请填写手机号" autocomplete="off" class="layui-input" id="reg-cellphone"
+                               autofocus>
+                    </div>
+                </div>
+                <div class="layui-col-xs5">
+                    <div style="margin-left: 11px;">
+                        <button type="button" class="layui-btn layui-btn-fluid layui-btn-primary"
+                                lay-on="reg-get-vercode">获取验证码
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-vercode"></i>
+                </div>
+                <input type="text" name="vercode" value="" lay-verify="required|vercode" placeholder="验证码"
+                       lay-reqtext="请填写验证码" autocomplete="off" class="layui-input" minlength="4" maxlength="4">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="password" name="password" value="" lay-verify="required|password" placeholder="密码"
+                       autocomplete="off" class="layui-input" id="reg-password" lay-affix="eye">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="password" name="confirmPassword" value="" lay-verify="required|confirmPassword"
+                       placeholder="确认密码" autocomplete="off" class="layui-input" lay-affix="eye">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <input type="checkbox" name="agreement" lay-verify="required" lay-skin="primary" title="同意">
+            <a href="#terms" target="_blank" style="position: relative; top: 6px; left: -15px;">
+                <ins>用户协议</ins>
+            </a>
+        </div>
+        <div class="layui-form-item">
+            <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="demo-reg">注册</button>
+        </div>
+        <div class="layui-form-item demo-reg-other">
+            <label>其他注册方式</label>
+            <span style="padding: 0 21px 0 6px;">
+        <a href="javascript: qRegister();" title="QQ邮箱注册"><i class="layui-icon layui-icon-login-qq"
+                                                                 style="color: #3492ed;"></i></a>
+        <a href="javascript: userRegister();" title="用户名注册"><i class="layui-icon layui-icon-username"
+                                                                    style="color: #4daf29;"></i></a>
+      </span>
+            <a th:href="@{/login}">登录已有帐号</a>
+        </div>
+    </div>
+</form>
+<script type="text/javascript" th:inline="javascript">
+    // thymeleaf 获取当前项目路径
+    /*<![CDATA[*/
+    const ctx = /*[[@{/}]]*/;
+    /*]]>*/
+    // 当前窗口 不是最外层窗口
+</script>
+<script th:src="@{layui/layui.js}"></script>
+<script>
+    layui.use(function () {
+        var $ = layui.$;
+        var form = layui.form;
+        var layer = layui.layer;
+        var util = layui.util;
+        let flag = true;
+        // 自定义验证规则
+        form.verify({
+            // 确认密码
+            confirmPassword: function (value, item) {
+                var passwordValue = $('#reg-password').val();
+                if (value !== passwordValue) {
+                    flag = false;
+                    return '两次密码输入不一致';
+                }else {
+                    flag = true;
+                }
+            }
+            // 密码
+            , password: function (value, item) {
+                [
+                    /^[\S]{6,12}$/
+                    , '密码必须6到12位，且不能出现空格'
+                ]
+                if (!new RegExp(value.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')).test(value)) {
+                    flag = false;
+                    return '密码必须6到12位，且不能出现空格';
+                }else {
+                    flag = true;
+                }
+            }
+            // 手机号
+            , phone: function (value, item) {
+                var reg = /^1\d{10}$/;
+                if (!reg.test(value)) {
+                    flag = false;
+                    return '请输入正确的手机号';
+                }else {
+                    flag = true;
+                }
+            }
+            // 验证码
+            , vercode: function (value, item) {
+                if (!value) {
+                    return '请输入验证码';
+                }else if (value.length < 4 || value.length > 4) {
+                    return '验证码必须是4位';
+                }else {
+                    flag = true;
+                }
+            }
+        });
+        // 提交事件
+        form.on('submit(demo-reg)', function (data) {
+            var field = data.field; // 获取表单字段值
+
+            // 是否勾选同意
+            if (!field.agreement) {
+                layer.msg('您必须勾选同意用户协议才能注册');
+                flag = false;
+            }else  {
+                flag = true;
+            }
+
+            // 显示填写结果，仅作演示用
+            layer.alert(JSON.stringify(field), {
+                title: '当前填写的字段值'
+            });
+
+            // 此处可执行 Ajax 等操作
+            // …
+            $.ajax({
+                url: ctx +'register',
+                type: 'post',
+                data: field,
+                dataType: 'json',
+                success: function (data) {
+                    if (data.code == 200) {
+                        layer.msg(data.message, {time: 1000}, function () {
+                            window.location.href = ctx +'login';
+                        });
+                    } else {
+                        layer.msg(data.message);
+                    }
+                }
+            });
+            return false; // 阻止默认 form 跳转
+        });
+
+        // 普通事件
+        util.on('lay-on', {
+            // 获取验证码
+            'reg-get-vercode': function (othis) {
+                var isvalid = form.validate('#reg-cellphone'); // 主动触发验证，v2.7.0 新增
+                // 验证通过
+                if (isvalid) {
+                    layer.msg('手机号规则验证通过');
+                    // 此处可继续书写「发送验证码」等后续逻辑
+                    $.ajax({
+                        url: ctx +'sendPhoneCode',
+                        type: 'get',
+                        data: {phone: document.querySelector('[name=phone]').value},
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data.code == 200) {
+                                layer.msg(data.message, {time: 1000});
+                            } else {
+                                layer.msg(data.message, {time: 1000});
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    });
+
+    function userRegister() {
+        layer.open({
+            type: 2,
+            title: '用户名注册',
+            shade: 0.8,
+            area: ['500px', '400px'],
+            content: ctx + 'userRegister'
+        });
+    }
+
+    function qRegister() {
+        layer.open({
+            type: 2,
+            title: 'QQ邮箱注册',
+            shade: 0.8,
+            area: ['500px', '400px'],
+            content: ctx + 'qRegister'
+        });
+    }
+</script>
+
+</body>
+</html>

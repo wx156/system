@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  <link type="text/css" rel="stylesheet" th:href="@{layui/css/layui.css}">
+  <style>
+    body {
+      padding: 20px;
+    }
+
+    .layui-form-item {
+      margin-bottom: 20px;
+    }
+
+    .layui-input-prefix {
+      width: 40px;
+      text-align: center;
+    }
+
+    .layui-input {
+      padding-left: 40px;
+    }
+
+    .layui-btn-getcode {
+      display: inline-block;
+      padding: 0 10px;
+      height: 38px;
+      line-height: 38px;
+      background-color: #fff;
+      border: 1px solid #e6e6e6;
+      color: #666;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    /* 取消hover事件效果 */
+    .layui-btn-getcode:hover {
+        background-color: #fff;
+        border-color: #e6e6e6;
+        color: #666;
+    }
+  </style>
+</head>
+<body>
+<from class="layui-form">
+    <div class="layui-form-item">
+        <div class="layui-input-wrap">
+            <div class="layui-input-prefix">
+                <i class="layui-icon layui-icon-username"></i>
+            </div>
+            <input type="text" name="phone" value="" lay-verify="required|phone" placeholder="手机号"
+                   lay-reqtext="请填写手机号" autocomplete="off" class="layui-input" lay-affix="clear" autofocus title="11位手机号">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-row">
+            <div class="layui-col-xs7">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix">
+                    <i class="layui-icon layui-icon-password"></i>
+                </div>
+                <input type="验证码" name="verification" value="" lay-verify="required" placeholder="验证码"
+                       lay-reqtext="请填写验证码" autocomplete="off" class="layui-input" lay-affix="clear">
+            </div>
+            </div>
+            <div class="layui-col-xs5">
+                <div class="layui-input-prefix">
+                <a href="javascript: getCode();" class="layui-btn layui-btn-getcode">获取验证码</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-wrap">
+            <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="login">登录</button>
+        </div>
+    </div>
+</from>
+</body>
+<script th:src="@{/layui/layui.js}"></script>
+<script type="text/javascript" th:inline="javascript">
+    // thymeleaf 获取当前项目路径
+    /*<![CDATA[*/
+    const ctx = /*[[@{/}]]*/;
+    /*]]>*/
+    // 当前窗口 不是最外层窗口
+</script>
+<script>
+    layui.use(['form'], function () {
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.$;
+        // // 获取表单数据
+        let flag = true;
+        // 手机号校验，只能是数字，11 位
+        let phoneReg = /^1[34578]\d{9}$/;
+        form.verify({
+            phone: function (value, item) {
+                if (!(/^1[34578]\d{9}$/.test(value))) {
+                    flag = false;
+                    return '手机号格式不正确';
+                }else {
+                    flag = true;
+                }
+            },
+            verification: function (value, item) {
+                if (value.length < 4) {
+                    flag = false;
+                    return '验证码长度不能小于4位';
+                }else if (value.length > 4) {
+                    flag = false;
+                    return '验证码长度不能大于4位';
+                }else {
+                    flag = true;
+                }
+            }
+        });
+        form.on('submit(login)', function (data) {
+            if(flag){
+                var field = data.field;
+                if(field.phone === '' || field.verification === ''){
+                    layer.msg('请填写完整信息');
+                }else{
+                    $.ajax({
+                        url: ctx + 'phone-login',
+                        type: 'post',
+                        data: field,
+                        success: function (data) {
+                            if(data.code == 200){
+                                layer.msg('登录成功');
+                                setTimeout(function () {
+                                    window.top.location.href = ctx + data.data;
+                                }, 1000);
+                            }else{
+                                layer.msg(data.message);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+        return false;
+    });
+    // 倒计时
+    function startCountdown() {
+        var countdownSeconds = 60; // 倒计时秒数
+        var countdownTimer; // 倒计时计时器
+        var btnGetCode = document.querySelector('.layui-btn-getcode');
+
+        if (!btnGetCode.disabled) {
+            btnGetCode.disabled = true;
+            countdownTimer = setInterval(function () {
+                countdownSeconds--;
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    btnGetCode.disabled = false;
+                    btnGetCode.innerText = '获取验证码';
+                } else {
+                    btnGetCode.innerText = countdownSeconds + ' 秒后重新获取';
+                }
+            }, 1000);
+        }
+    };
+    function getCode() {
+        let btnGetCode = document.querySelector('.layui-btn-getcode');
+        // 验证邮箱
+        if (!/^1[34578]\d{9}$/.test(document.querySelector('[name=phone]').value)) {
+            layer.msg('手机号格式不正确');
+            return;
+        }
+        if (!btnGetCode.disabled) {
+            startCountdown();
+            btnGetCode.disabled = true; // 禁用按钮
+            layui.$.ajax({
+                url: ctx + 'sendPhoneCode',
+                type: 'get',
+                data: {phone: document.querySelector('[name=phone]').value},
+                dataType: 'json',
+                success: function (data) {
+                    if (data.code == 200) {
+                        layer.msg(data.message, {time: 1000});
+                    } else {
+                        layer.msg(data.message, {time: 1000});
+                    }
+                }
+            });
+        }
+    };
+</script>
+</html>

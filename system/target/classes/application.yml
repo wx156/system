@@ -1,0 +1,61 @@
+server:
+  port: 80
+
+
+# ???
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/syste?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 1234
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+  devtools:
+    livereload:
+      enabled: true
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 2096635296@qq.com
+    password: htebmtnqmjikhhcd
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+          port: ${spring.mail.port}
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  #??????????????????????
+  thymeleaf:
+    enabled: true
+    prefix: classpath:/templates/
+    suffix: .html
+# MyBatis ??
+mybatis:
+  # mapper ???????
+  mapperLocations: classpath:mapper/*.xml
+  # ????????????
+  type-aliases-package: com.kfm.system.generator.mapper
+  configuration:
+    # ??????
+    map-underscore-to-camel-case: true
+
+
+
+logging:
+  level:
+    com.kfm.com.kfm.system.mapper: debug
+
+# 自定义配置
+my:
+  ip:
+    maxCount: 5
