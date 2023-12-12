@@ -166,11 +166,6 @@
                 flag = true;
             }
 
-            // 显示填写结果，仅作演示用
-            layer.alert(JSON.stringify(field), {
-                title: '当前填写的字段值'
-            });
-
             // 此处可执行 Ajax 等操作
             // …
             $.ajax({
@@ -181,7 +176,7 @@
                 success: function (data) {
                     if (data.code == 200) {
                         layer.msg(data.message, {time: 1000}, function () {
-                            window.location.href = ctx +'login';
+                            window.location.href = ctx + data.data;
                         });
                     } else {
                         layer.msg(data.message);
@@ -198,26 +193,52 @@
                 var isvalid = form.validate('#reg-cellphone'); // 主动触发验证，v2.7.0 新增
                 // 验证通过
                 if (isvalid) {
-                    layer.msg('手机号规则验证通过');
                     // 此处可继续书写「发送验证码」等后续逻辑
-                    $.ajax({
-                        url: ctx +'sendPhoneCode',
-                        type: 'get',
-                        data: {phone: document.querySelector('[name=phone]').value},
-                        dataType: 'json',
-                        success: function (data) {
-                            if (data.code == 200) {
-                                layer.msg(data.message, {time: 1000});
-                            } else {
-                                layer.msg(data.message, {time: 1000});
-                            }
-                        }
-                    });
+                    getCode();
                 }
             }
         });
     });
+    function startCountdown() {
+        var countdownSeconds = 60; // 倒计时秒数
+        var countdownTimer; // 倒计时计时器
+        var btnGetCode = document.querySelector('.layui-btn-fluid');
 
+        if (!btnGetCode.disabled) {
+            btnGetCode.disabled = true;
+            countdownTimer = setInterval(function () {
+                countdownSeconds--;
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    btnGetCode.disabled = false;
+                    btnGetCode.innerText = '获取验证码';
+                } else {
+                    btnGetCode.innerText = countdownSeconds + ' 秒后重新获取';
+                }
+            }, 1000);
+        }
+    };
+    function getCode() {
+        let btnGetCode = document.querySelector('.layui-btn-fluid');
+
+        if (!btnGetCode.disabled) {
+            startCountdown();
+            btnGetCode.disabled = true; // 禁用按钮
+            layui.$.ajax({
+                url: ctx +'register/sendPhoneCode',
+                type: 'get',
+                data: {phone: document.querySelector('[name=cellphone]').value},
+                dataType: 'json',
+                success: function (data) {
+                    if (data.code == 200) {
+                        layer.msg(data.message, {time: 1000});
+                    } else {
+                        layer.msg(data.message, {time: 1000});
+                    }
+                }
+            });
+        }
+    };
     function userRegister() {
         layer.open({
             type: 2,

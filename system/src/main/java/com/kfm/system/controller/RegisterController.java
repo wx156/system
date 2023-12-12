@@ -4,23 +4,29 @@ import com.kfm.system.domain.User;
 import com.kfm.system.ex.ServiceException;
 import com.kfm.system.service.impl.EmailServiceImpl;
 import com.kfm.system.service.impl.UserServiceImpl;
+import com.kfm.system.util.Constant;
 import com.kfm.system.util.Resp;
+import com.kfm.system.util.SendSms;
 import com.wf.captcha.utils.CaptchaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @Slf4j
 public class RegisterController {
     @Autowired
-    UserServiceImpl userServiceImpl;
+    private UserServiceImpl userServiceImpl;
     @Autowired
     private EmailServiceImpl emailService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @GetMapping("/register")
     public ModelAndView register() {
@@ -140,6 +146,44 @@ public class RegisterController {
             return Resp.ok("激活成功", "login");
         }catch (ServiceException e){
             return Resp.error(e.getMessage());
+        }
+    }
+    @PostMapping("/register")
+    public Resp register(User user, String vercode, String confirmPassword) {
+        // 校验数据
+        if (ObjectUtils.isEmpty(user) ||!StringUtils.hasText(vercode) ||!StringUtils.hasText(confirmPassword)) {
+            return Resp.error("参数校验失败");
+        }
+        if (StringUtils.hasText(user.getPassword()) && !user.getPassword().equals(confirmPassword)){
+            return Resp.error("两次密码不一致");
+        }
+        if (StringUtils.hasText(vercode) && StringUtils.hasText(user.getPhone())){
+            if (redisTemplate.hasKey(Constant.REGISTER_PHONE_CODE + user.getPhone()) && redisTemplate.opsForValue().get(Constant.REGISTER_PHONE_CODE + user.getPhone()) == null){
+                return Resp.error("验证码已过期");
+            }
+            String code = (String) redisTemplate.opsForValue().get(Constant.REGISTER_PHONE_CODE + user.getPhone());
+            if (ObjectUtils.isEmpty(code) || !code.equals(vercode)){
+                return Resp.error("验证码错误");
+            }
+        }
+        return Resp.ok("注册成功","login");
+    }
+    @GetMapping("/register/sendPhoneCode")
+    public Resp sendPhoneCode(User user) {
+        if (ObjectUtils.isEmpty(user)) {
+            return Resp.error("参数校验失败");
+        }
+        // 生成一个随机四位数
+        String code = String.valueOf((int) (Math.random() * 9000 + 1000));
+        // 将验证码存储到redis中,设置过期时间为5分钟
+        redisTemplate.opsForValue().set(Constant.REGISTER_PHONE_CODE + user.getPhone(),code,5, TimeUnit.MINUTES);
+        // 发送验证码
+        try {
+            SendSms.sendRegisterSms(user.getPhone(),code);
+            return Resp.ok("验证码已发送");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Resp.error("验证码发送失败");
         }
     }
 }
